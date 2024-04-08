@@ -7,7 +7,7 @@ const resolvers = {
       if (context.user) {
         return User.findOne({ _id: context.user._id });
       }
-      return new AuthenticationError('You need to login!');
+      throw new AuthenticationError('You need to login!');
     }
   },
 
@@ -21,30 +21,25 @@ const resolvers = {
     login: async (parent, { email, password }) => {
       const user = await User.findOne({ email });
       if(!user){
-        console.error('Invalid email or password.')  
-        return;
+        throw new AuthenticationError('You need to be logged in.');
       }
       const correctPw = await user.isCorrectPassword(password);
       if(!correctPw) {
-        console.error('Invalid email or password.')  
-        return;
+        throw new AuthenticationError('You need to be logged in.');
       }
       const token = signToken(user);
       return { token, user };
     },
     saveBook: async (parent, { input }, context) => {
-      // if (!context.user) {
-      //   console.error('Invalid email or password.')  
-      //   return;
-      // } 
-      // console.log(input);
-      // const userData = await User.findOneAndUpdate(
-      //   { _id: context.user._id },
-      //   { $addToSet: { savedBooks: input } },
-      //   { new: true, runValidators: true }
-      // );
-      // return userData;
-      console.log(input)
+      if (!context.user) {
+        throw new AuthenticationError('You need to be logged in.');
+      };
+      const userData = await User.findOneAndUpdate(
+        { _id: context.user._id },
+        { $addToSet: { savedBooks: input } },
+        { new: true, runValidators: true }
+      );
+      return userData;
     },
     removeBook: async (parent, { bookId }, context) => {
       if (!context.user) {
